@@ -41,14 +41,18 @@ func main() {
 
 	mux.Handle("/static/", http.StripPrefix("/static/", staticFileHandler()))
 	mux.Handle("/assets/", http.StripPrefix("/assets/", renderAssets()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/main", func(w http.ResponseWriter, r *http.Request) {
 		renderTemplate(w, "index", nil)
 	})
 	mux.HandleFunc("/users/", getEntityHandler)
 	mux.HandleFunc("/visits/", getEntityHandler)
 	mux.HandleFunc("/locations/", getEntityHandler)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "404 | Not found", http.StatusNotFound)
+		return
+	})
 
-	log.Println("Listening on http://localhost:" + port)
+	log.Println("Listening on http://localhost:" + port + "/main")
 
 	err := http.ListenAndServe(":"+port, mux)
 
