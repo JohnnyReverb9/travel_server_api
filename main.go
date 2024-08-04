@@ -162,7 +162,7 @@ func getUsersVisits(w http.ResponseWriter, r *http.Request) {
 						response = append(response, structs.VisitResponse{
 							Mark:       visit.Mark,
 							Visited_at: visit.Visited_at,
-							Place:      locationStr,
+							Place:      locations[locationStr].Place,
 						})
 					}
 				}
