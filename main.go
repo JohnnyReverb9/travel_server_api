@@ -8,7 +8,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"travel_server_api/structs"
 	"travel_server_api/test"
 )
 
@@ -47,6 +49,7 @@ func main() {
 	mux.HandleFunc("/users/", getEntityHandler)
 	mux.HandleFunc("/visits/", getEntityHandler)
 	mux.HandleFunc("/locations/", getEntityHandler)
+	mux.HandleFunc("/users/{id}/visits", getUsersVisits)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "404 | Not found", http.StatusNotFound)
 		return
@@ -114,6 +117,69 @@ func getEntityHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "404 | Not found", http.StatusNotFound)
 		}
 	default:
+		http.Error(w, "404 | Not found", http.StatusNotFound)
+	}
+}
+
+// GET /users/{id}/visits : params: fromDate, toDate
+func getUsersVisits(w http.ResponseWriter, r *http.Request) {
+	uri := strings.Split(r.URL.Path, "/")
+
+	if len(uri) < 4 {
+		http.Error(w, "400 | Bad Request", http.StatusBadRequest)
+	}
+
+	id := uri[2]
+	var response []structs.VisitResponse
+	var fromDate, toDate int64
+	var err error
+
+	if _, exists := users[id]; exists {
+		if r.URL.Query().Has("fromDate") && r.URL.Query().Has("toDate") {
+			fromDateStr := r.URL.Query().Get("fromDate")
+			toDateStr := r.URL.Query().Get("toDate")
+
+			if fromDateStr != "" {
+				toDate, err = strconv.ParseInt(toDateStr, 10, 64)
+				if err != nil {
+					http.Error(w, "400 | Bad Request", http.StatusBadRequest)
+					return
+				}
+			}
+
+			if toDateStr != "" {
+				fromDate, err = strconv.ParseInt(fromDateStr, 10, 64)
+				if err != nil {
+					http.Error(w, "400 | Bad Request", http.StatusBadRequest)
+					return
+				}
+			}
+
+			for _, visit := range visits {
+				if strconv.Itoa(int(visit.User)) == id {
+					if (fromDateStr == "" || visit.Visited_at >= fromDate) && (toDateStr == "" || visit.Visited_at <= toDate) {
+						locationStr := strconv.Itoa(int(visit.Location))
+						response = append(response, structs.VisitResponse{
+							Mark:       visit.Mark,
+							Visited_at: visit.Visited_at,
+							Place:      locationStr,
+						})
+					}
+				}
+			}
+
+			fullResponse := structs.VisitsResponse{Visits: response}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			err = json.NewEncoder(w).Encode(fullResponse)
+
+			if err != nil {
+				log.Println(err)
+			}
+		} else {
+			http.Error(w, "400 | Bad Request", http.StatusBadRequest)
+		}
+	} else {
 		http.Error(w, "404 | Not found", http.StatusNotFound)
 	}
 }

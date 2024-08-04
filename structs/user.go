@@ -6,5 +6,5 @@ type User struct {
 	FirstName string `json:"first_name"` // until 50 symbols
 	LastName  string `json:"last_name"`  // until 50 symbols
 	Gender    string `json:"gender"`     // m -- male; f -- female
-	BirthDate int    `json:"birth_date"` // timestamp
+	BirthDate int64  `json:"birth_date"` // timestamp
 }
