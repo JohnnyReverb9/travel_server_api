@@ -176,6 +176,26 @@ func getUsersVisits(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Println(err)
 			}
+		} else if !r.URL.Query().Has("fromDate") && !r.URL.Query().Has("toDate") {
+			for _, visit := range visits {
+				if strconv.Itoa(int(visit.User)) == id {
+					locationStr := strconv.Itoa(int(visit.Location))
+					response = append(response, structs.VisitResponse{
+						Mark:       visit.Mark,
+						Visited_at: visit.Visited_at,
+						Place:      locations[locationStr].Place,
+					})
+				}
+			}
+
+			fullResponse := structs.VisitsResponse{Visits: response}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			err = json.NewEncoder(w).Encode(fullResponse)
+
+			if err != nil {
+				log.Println(err)
+			}
 		} else {
 			http.Error(w, "400 | Bad Request", http.StatusBadRequest)
 		}
